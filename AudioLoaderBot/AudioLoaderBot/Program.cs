@@ -40,7 +40,7 @@ namespace AudioLoaderBot
 				}
 				else
 				{
-					Bot.SendTextMessageAsync(e.Message.Chat.Id, $"Command not found..");
+					Bot.SendTextMessageAsync(e.Message.Chat.Id, $"Command wrong..");
 				}
 			}
 		}
