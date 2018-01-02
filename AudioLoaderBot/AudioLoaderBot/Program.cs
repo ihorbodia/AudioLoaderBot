@@ -30,11 +30,12 @@ namespace AudioLoaderBot
 		{
 			if (e.Message.Type == Telegram.Bot.Types.Enums.MessageType.TextMessage)
 			{
+				string message = e.Message.Text;
 				if (e.Message.Text == "/start")
 				{
 					Bot.SendTextMessageAsync(e.Message.Chat.Id, $"Send me link to youtube video and I'll give you an audio... Files over 50 MB are not processed yet... :)");
 				}
-				else if (e.Message.Text.Contains("www.youtube.com"))
+				else if (e.Message.Text.Contains("www.youtube.com") || e.Message.Text.Contains("youtu.be"))
 				{
 					RunExample(e.Message.Text, e.Message.Chat.Id).GetAwaiter().GetResult();
 				}
@@ -46,19 +47,27 @@ namespace AudioLoaderBot
 		}
 		private static async Task RunExample(string URL, long chatId)
 		{
-			var id = URL.Split("=")[1];
+			string videoid = string.Empty;
+			if (URL.Contains("youtube.com"))
+			{
+				videoid = URL.Substring(URL.LastIndexOf("=") + 1);
+			}
+			else if (URL.Contains("youtu.be"))
+			{
+				videoid = URL.Substring(URL.LastIndexOf("/") + 1);
+			}
 			try
 			{
-				var videoInfos = await DownloadUrlResolver.GetVideoUrlsAsync(id, video => video != null, false);
+				var videoInfos = await DownloadUrlResolver.GetVideoUrlsAsync(videoid, video => video != null, false);
 				var videoWithAudio =
-					videoInfos.FirstOrDefault(video => video.AudioBitrate <= 256 && video.VideoType == VideoType.Mp4);
+					videoInfos.FirstOrDefault(video => video.AudioBitrate <= 256 && video.VideoType != VideoType.WebM);
 
 				if (videoWithAudio != null)
 				{
 					using (var client = new WebClient())
 					{
-						byte[] contents = await client.DownloadDataTaskAsync(new Uri(videoWithAudio.DownloadUrl, UriKind.Absolute));
-						await Bot.SendAudioAsync(chatId, new Telegram.Bot.Types.FileToSend(videoWithAudio.Title, new MemoryStream(contents)), videoWithAudio.Title, 0, string.Empty, string.Empty);
+						Stream content = await client.OpenReadTaskAsync(new Uri(videoWithAudio.DownloadUrl));
+						await Bot.SendAudioAsync(chatId, new Telegram.Bot.Types.FileToSend(videoWithAudio.Title, content), videoWithAudio.Title, 0, string.Empty, string.Empty);
 					}
 				}
 				else
