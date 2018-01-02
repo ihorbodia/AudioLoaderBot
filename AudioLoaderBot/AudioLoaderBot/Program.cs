@@ -32,7 +32,7 @@ namespace AudioLoaderBot
 			{
 				if (e.Message.Text == "/start")
 				{
-					Bot.SendTextMessageAsync(e.Message.Chat.Id, $"Hello, {e.Message.Chat.Username}, send me link to youtube video and I'll give you an audio... Files over 50 MB are not processed yet.. :)");
+					Bot.SendTextMessageAsync(e.Message.Chat.Id, $"Send me link to youtube video and I'll give you an audio... Files over 50 MB are not processed yet... :)");
 				}
 				else if (e.Message.Text.Contains("www.youtube.com"))
 				{
