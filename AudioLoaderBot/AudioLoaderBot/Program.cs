@@ -1,125 +1,24 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using Telegram.Bot;
-using Telegram.Bot.Types;
-using YoutubeExtractorCore;
 
 namespace AudioLoaderBot
 {
     class Program
     {
-		public static TelegramBotClient Bot = new TelegramBotClient("517779099:AAEyOrpWv0Y5_QB3n7wPDoovhkEzNXXBg-k");
+		public static TelegramBotClient Bot = new TelegramBotClient("517779099:AAEO5Rv31rz-79Nt1Pqy3i1D_LgSVXEg0oI");
 		static void Main(string[] args)
         {
 			Bot.OnMessage += Bot_OnMessage;
-			Bot.OnMessageEdited += Bot_OnMessageEdited;
 
 			Bot.StartReceiving();
 			Console.ReadKey();
 			Bot.StopReceiving();
 		}
 
-		private static void Bot_OnMessageEdited(object sender, Telegram.Bot.Args.MessageEventArgs e)
-		{
-			
-		}
-
 		private static void Bot_OnMessage(object sender, Telegram.Bot.Args.MessageEventArgs e)
 		{
-			if (e.Message.Type == Telegram.Bot.Types.Enums.MessageType.TextMessage)
-			{
-				string message = e.Message.Text;
-				if (e.Message.Text == "/start")
-				{
-					Bot.SendTextMessageAsync(e.Message.Chat.Id, $"Send me link to youtube video and I'll give you an audio... Files over 50 MB are not processed yet... :)");
-				}
-				else if (e.Message.Text.Contains("www.youtube.com") || e.Message.Text.Contains("youtu.be"))
-				{
-					RunExample(e.Message.Text, e.Message.Chat.Id).GetAwaiter().GetResult();
-				}
-				else
-				{
-					Bot.SendTextMessageAsync(e.Message.Chat.Id, $"Command wrong..");
-				}
-			}
-		}
-		private static async Task RunExample(string URL, long chatId)
-		{
-			string videoid = string.Empty;
-			if (URL.Contains("youtube.com"))
-			{
-				videoid = URL.Substring(URL.LastIndexOf("=") + 1);
-			}
-			else if (URL.Contains("youtu.be"))
-			{
-				videoid = URL.Substring(URL.LastIndexOf("/") + 1);
-			}
-			try
-			{
-				var videoInfos = await DownloadUrlResolver.GetVideoUrlsAsync(videoid, video => video != null, false);
-				var videoWithAudio =
-					videoInfos.FirstOrDefault(video => video.AudioBitrate <= 256 && video.VideoType != VideoType.WebM);
-
-				if (videoWithAudio != null)
-				{
-					using (var client = new WebClient())
-					{
-						byte[] data = await client.DownloadDataTaskAsync(new Uri(videoWithAudio.DownloadUrl));
-						FileToSend file = new FileToSend("Audiofile", new MemoryStream(data));
-						await Bot.SendAudioAsync(chatId, file, videoWithAudio.Title, 0, GetAutor(videoWithAudio.Title), GetTitle(videoWithAudio.Title));
-					}
-				}
-				else
-				{
-					Console.WriteLine("Video with audio not found");
-				}
-			}
-			catch (YoutubeVideoNotAvailableException)
-			{
-				Console.WriteLine("Video is not available");
-			}
-			catch (YoutubeParseException)
-			{
-				Console.WriteLine("Error while trying to parse youtube data");
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine(ex.Message);
-			}
-		}
-
-		private static string GetAutor(string caption)
-		{
-			string result = string.Empty;
-			int length = caption.IndexOf("-");
-			if (length > 0)
-			{
-				result = caption.Substring(0, length);
-			}
-			else
-			{
-				result = caption;
-			}
-			return result;
-		}
-
-		private static string GetTitle(string caption)
-		{
-			string result = string.Empty;
-			int length = caption.IndexOf("-");
-			if (length > 0)
-			{
-				result = caption.Substring(caption.IndexOf("-") + 2);
-			}
-			else
-			{
-				result = string.Empty;
-			}
-			return result;
+			AudioSender audioSender = new AudioSender(Bot);
+			audioSender.BotOnMessage(sender, e);
 		}
 	}
 }
