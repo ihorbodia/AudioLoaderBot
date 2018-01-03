@@ -32,30 +32,26 @@ namespace AudioLoaderBot
 				}
 				else
 				{
-					_bot.SendTextMessageAsync(e.Message.Chat.Id, $"Command wrong..");
+					_bot.SendTextMessageAsync(e.Message.Chat.Id, $"Command wrong...");
 				}
 			}
 		}
 
 		private async Task GetAudio(string URL, long chatId)
 		{
-			string videoid = string.Empty;
-			if (URL.Contains("youtube.com"))
-			{
-				videoid = URL.Substring(URL.LastIndexOf("=") + 1);
-			}
-			else if (URL.Contains("youtu.be"))
-			{
-				videoid = URL.Substring(URL.LastIndexOf("/") + 1);
-			}
 			try
 			{
-				var videoInfos = await DownloadUrlResolver.GetVideoUrlsAsync(videoid, video => video != null, false);
+				var videoInfos = await DownloadUrlResolver.GetDownloadUrlsAsync(URL, false);
 				var videoWithAudio =
-					videoInfos.FirstOrDefault(video => video.AudioBitrate <= 256 && video.VideoType != VideoType.WebM);
-
+					videoInfos.FirstOrDefault(video => video.AudioBitrate <= 256 && video.VideoType != VideoType.WebM && video.Resolution <= 480);
+					
 				if (videoWithAudio != null)
-				{
+				{				
+					if (videoWithAudio.RequiresDecryption)
+					{
+						await DownloadUrlResolver.DecryptDownloadUrl(videoWithAudio);
+					}
+					await _bot.SendTextMessageAsync(chatId, "It seems OK, processing...");
 					using (var client = new WebClient())
 					{
 						byte[] data = await client.DownloadDataTaskAsync(new Uri(videoWithAudio.DownloadUrl));
