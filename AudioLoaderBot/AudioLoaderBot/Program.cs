@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using YoutubeExtractorCore;
 
 namespace AudioLoaderBot
@@ -66,8 +67,9 @@ namespace AudioLoaderBot
 				{
 					using (var client = new WebClient())
 					{
-						Stream content = await client.OpenReadTaskAsync(new Uri(videoWithAudio.DownloadUrl));
-						await Bot.SendAudioAsync(chatId, new Telegram.Bot.Types.FileToSend(videoWithAudio.Title, content), videoWithAudio.Title, 0, string.Empty, string.Empty);
+						await client.DownloadFileTaskAsync(new Uri(videoWithAudio.DownloadUrl), $"./audio/{chatId}.mp3");
+						FileToSend file = new FileToSend(videoWithAudio.Title, new MemoryStream(System.IO.File.ReadAllBytes($"./audio/{chatId}.mp3")));
+						await Bot.SendAudioAsync(chatId, file, videoWithAudio.Title, 0, string.Empty, string.Empty);
 					}
 				}
 				else
@@ -88,5 +90,7 @@ namespace AudioLoaderBot
 				Console.WriteLine(ex.Message);
 			}
 		}
+
+
 	}
 }
