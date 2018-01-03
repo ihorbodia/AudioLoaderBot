@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -67,9 +68,9 @@ namespace AudioLoaderBot
 				{
 					using (var client = new WebClient())
 					{
-						await client.DownloadFileTaskAsync(new Uri(videoWithAudio.DownloadUrl), $"./audio/{chatId}.mp3");
-						FileToSend file = new FileToSend(videoWithAudio.Title, new MemoryStream(System.IO.File.ReadAllBytes($"./audio/{chatId}.mp3")));
-						await Bot.SendAudioAsync(chatId, file, videoWithAudio.Title, 0, string.Empty, string.Empty);
+						byte[] data = await client.DownloadDataTaskAsync(new Uri(videoWithAudio.DownloadUrl));
+						FileToSend file = new FileToSend("Audiofile", new MemoryStream(data));
+						await Bot.SendAudioAsync(chatId, file, videoWithAudio.Title, 0, GetAutor(videoWithAudio.Title), GetTitle(videoWithAudio.Title));
 					}
 				}
 				else
@@ -91,6 +92,34 @@ namespace AudioLoaderBot
 			}
 		}
 
+		private static string GetAutor(string caption)
+		{
+			string result = string.Empty;
+			int length = caption.IndexOf("-");
+			if (length > 0)
+			{
+				result = caption.Substring(0, length);
+			}
+			else
+			{
+				result = caption;
+			}
+			return result;
+		}
 
+		private static string GetTitle(string caption)
+		{
+			string result = string.Empty;
+			int length = caption.IndexOf("-");
+			if (length > 0)
+			{
+				result = caption.Substring(caption.IndexOf("-") + 2);
+			}
+			else
+			{
+				result = string.Empty;
+			}
+			return result;
+		}
 	}
 }
