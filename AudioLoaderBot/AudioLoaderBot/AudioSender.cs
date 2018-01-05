@@ -17,22 +17,22 @@ namespace AudioLoaderBot
 			_bot = bot;
 		}
 
-		public void BotOnMessage(object sender, Telegram.Bot.Args.MessageEventArgs e)
+		public void BotOnMessage(Message inputMessage)
 		{
-			if (e.Message.Type == Telegram.Bot.Types.Enums.MessageType.TextMessage)
+			if (inputMessage.Type == Telegram.Bot.Types.Enums.MessageType.TextMessage)
 			{
-				string message = e.Message.Text;
-				if (e.Message.Text == "/start")
+				string message = inputMessage.Text;
+				if (message == "/start")
 				{
-					_bot.SendTextMessageAsync(e.Message.Chat.Id, $"Send me link to youtube video and I'll give you an audio... Files over 50 MB are not processed yet... :)");
+					_bot.SendTextMessageAsync(inputMessage.Chat.Id, $"Send me link to youtube video and I'll give you an audio... Files over 50 MB are not processed yet... :)");
 				}
-				else if (e.Message.Text.Contains("www.youtube.com") || e.Message.Text.Contains("youtu.be"))
+				else if (message.Contains("www.youtube.com") || message.Contains("youtu.be"))
 				{
-					GetAudio(e.Message.Text, e.Message.Chat.Id).GetAwaiter().GetResult();
+					GetAudio(message, inputMessage.Chat.Id).GetAwaiter().GetResult();
 				}
 				else
 				{
-					_bot.SendTextMessageAsync(e.Message.Chat.Id, $"Command wrong...");
+					_bot.SendTextMessageAsync(inputMessage.Chat.Id, $"Command wrong...");
 				}
 			}
 		}
