@@ -1,0 +1,15 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_EXTENSION_VERSION": "~1",
+    "ScmType": "None",
+    "WEBSITE_AUTH_ENABLED": "False",
+    "AzureWebJobsDashboard": "DefaultEndpointsProtocol=https;AccountName=audioloaderbot956c;AccountKey=N8FZSPpBrykvCKpslvBdtieGIW/whPgSWoIJgGSq1dzpjqzIBJso5dajq4mzM11jxyldFyqOl6eX7cXKg41I8w==",
+    "WEBSITE_NODE_DEFAULT_VERSION": "6.5.0",
+    "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "DefaultEndpointsProtocol=https;AccountName=audioloaderbot956c;AccountKey=N8FZSPpBrykvCKpslvBdtieGIW/whPgSWoIJgGSq1dzpjqzIBJso5dajq4mzM11jxyldFyqOl6eX7cXKg41I8w==",
+    "WEBSITE_CONTENTSHARE": "audioloaderbot956c",
+    "WEBSITE_SITE_NAME": "AudioLoaderBot",
+    "WEBSITE_SLOT_NAME": "Production",
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=audioloaderbot956c;AccountKey=N8FZSPpBrykvCKpslvBdtieGIW/whPgSWoIJgGSq1dzpjqzIBJso5dajq4mzM11jxyldFyqOl6eX7cXKg41I8w=="
+  }
+}
