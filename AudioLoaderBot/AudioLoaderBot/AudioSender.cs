@@ -1,96 +1,84 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Telegram.Bot;
 using Telegram.Bot.Types;
-using YoutubeExtractorCore;
+using YoutubeExtractor;
 
 namespace AudioLoaderBot
 {
-    public class AudioSender
-    {
-		TelegramBotClient _bot;
-		public AudioSender(TelegramBotClient bot)
+	public class AudioExtractor
+	{
+		List<VideoInfo> videoInfos;
+		VideoInfo videoInfoFile;
+		const int TelegramFileMaximumLengthSize = 50000000;
+
+		public string ErrorMessage { get; set; }
+
+		public AudioExtractor(string YoutubeURL)
 		{
-			_bot = bot;
+			videoInfos = DownloadUrlResolver.GetDownloadUrls(YoutubeURL, true).ToList();
+
 		}
 
-		public void BotOnMessage(Message inputMessage)
+		private void WebClient_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
 		{
-			if (inputMessage.Type == Telegram.Bot.Types.Enums.MessageType.TextMessage)
+			if (e.BytesReceived > TelegramFileMaximumLengthSize)
 			{
-				string message = inputMessage.Text;
-				if (message == "/start")
-				{
-					_bot.SendTextMessageAsync(inputMessage.Chat.Id, $"Send me link to youtube video and I'll give you an audio... Files over 50 MB are not processed yet... :)");
-				}
-				else if (message.Contains("www.youtube.com") || message.Contains("youtu.be"))
-				{
-					GetAudio(message, inputMessage.Chat.Id).GetAwaiter().GetResult();
-				}
-				else
-				{
-					_bot.SendTextMessageAsync(inputMessage.Chat.Id, $"Command wrong...");
-				}
+				(sender as WebClient).CancelAsync();
+				ErrorMessage = "File is too large";
 			}
 		}
 
-		private async Task GetAudio(string URL, long chatId)
+		public async Task<TelegramAudioFile> GetAudio()
 		{
+			TelegramAudioFile result = null;
 			try
 			{
-				var videoInfos = await DownloadUrlResolver.GetDownloadUrlsAsync(URL, false);
-				var videoWithAudio =
-					videoInfos.FirstOrDefault(video => video.AudioBitrate <= 256 && video.VideoType != VideoType.WebM && video.Resolution <= 480);
-					
-				if (videoWithAudio != null)
-				{				
-					if (videoWithAudio.RequiresDecryption)
-					{
-						await DownloadUrlResolver.DecryptDownloadUrl(videoWithAudio);
-					}
-					await _bot.SendTextMessageAsync(chatId, "It seems OK, processing...");
-					using (var client = new WebClient())
-					{
-						byte[] data = await client.DownloadDataTaskAsync(new Uri(videoWithAudio.DownloadUrl));
-						MemoryStream stream = new MemoryStream(data);
-						FileToSend file = new FileToSend("Audiofile", new MemoryStream(data));
-						if (data.Count() > 50000000)
-						{
-							await _bot.SendTextMessageAsync(chatId, "File is too large...");
-							stream.Close();
-							data = null;
-						}
-						else
-						{
-							await _bot.SendAudioAsync(chatId, file, videoWithAudio.Title, 0, GetAutor(videoWithAudio.Title), GetTitle(videoWithAudio.Title));
-						}
-					}
+				videoInfoFile =
+				videoInfos.OrderByDescending(info => info.AudioBitrate)
+						.FirstOrDefault();
 
-					GC.Collect();
-				}
-				else
+				if (videoInfoFile == null)
 				{
-					Console.WriteLine("Video with audio not found");
+					ErrorMessage = "Video with audio not found";
+					return null;
 				}
-			}
-			catch (YoutubeVideoNotAvailableException)
-			{
-				Console.WriteLine("Video is not available");
+
+				if (videoInfoFile.RequiresDecryption)
+				{
+					DownloadUrlResolver.DecryptDownloadUrl(videoInfoFile);
+				}
+
+				using (var client = new WebClient())
+				{
+					client.DownloadProgressChanged += WebClient_DownloadProgressChanged;
+					byte[] data = await client.DownloadDataTaskAsync(new Uri(videoInfoFile.DownloadUrl));
+
+					result = new TelegramAudioFile()
+					{
+						TelegramFile = new FileToSend($"{videoInfoFile.Title}.mp3", new MemoryStream(data)),
+						Caption = videoInfoFile.Title,
+						Performer = ExtractAutor(videoInfoFile.Title),
+						Title = ExtractTitle(videoInfoFile.Title)
+					};
+				}
+				return result;
 			}
 			catch (YoutubeParseException)
 			{
-				Console.WriteLine("Error while trying to parse youtube data");
+				ErrorMessage = "Error while trying to parse youtube data";
 			}
 			catch (Exception ex)
 			{
 				Console.WriteLine(ex.Message);
 			}
+			return null;
 		}
 
-		private string GetAutor(string caption)
+		private string ExtractAutor(string caption)
 		{
 			string result = string.Empty;
 			int length = caption.IndexOf("-");
@@ -105,7 +93,7 @@ namespace AudioLoaderBot
 			return result;
 		}
 
-		private string GetTitle(string caption)
+		private string ExtractTitle(string caption)
 		{
 			string result = string.Empty;
 			int length = caption.IndexOf("-");

@@ -10,9 +10,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="YoutubeExtractorCore">
-      <HintPath>..\..\..\..\Downloads\YoutubeExtractorCore.dll</HintPath>
-      <Private>true</Private>
+    <Reference Include="YoutubeExtractor">
+      <HintPath>..\..\..\..\Desktop\AudioLoaderBot\YoutubeExtractor.dll</HintPath>
     </Reference>
   </ItemGroup>
 
