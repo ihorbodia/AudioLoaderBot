@@ -1,0 +1,11 @@
+{
+    "frameworks":{
+        "net46":{
+            "dependencies":{
+                "Telegram.Bot": "13.4.0",
+                "YoutubeExtractor": "0.10.11",
+                "Newtonsoft.Json": "10.0.3"
+            }
+        }
+    }
+}
